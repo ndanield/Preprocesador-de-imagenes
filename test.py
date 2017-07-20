@@ -153,7 +153,7 @@ def image_process(im, letter, case):
             
         mask = np.zeros((h,w), np.uint8) # crea una nueva matris llena de zeros
         mask = thresh[y:y+h, x:x+w] # toma una region de la imagen thresh
-        #mask = cv2.resize(mask, (64, 64)) #demosle un tamano normalizado
+        mask = cv2.resize(mask, (48,48)) #demosle un tamano normalizado
 
         onpix = cv2.countNonZero(mask) #a causa de esta funcion es que usamos thresh para invertir colores
         xbar = x_bar(mask)
@@ -178,7 +178,8 @@ if __name__ == "__main__":
     completion = 0
     LOWERCASE = 1
     UPPERCASE = 0
-    with open("letras.csv", "w") as f:    
+    name = raw_input("Nombre del archivo:")
+    with open(name + ".csv", "w") as f:    
         f.write("x-box,y-box,ancho,alto,onpix,x-bar,y-bar,x2bar,y2bar,xybar,x2ybr,xy2br,x-ege,xegvy,y-ege,yegvx,letra\n")        
         for i in range(abc_size):
             filename = chr(ord('A') + i)
