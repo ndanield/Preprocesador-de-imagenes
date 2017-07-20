@@ -1,3 +1,4 @@
+# -*- coding: cp1252 -*-
 import operator
 import numpy as np
 import cv2
@@ -126,36 +127,46 @@ def y_egvy(matrix):
 
 
 def image_process(im, letter):
+    results = []
+    
     imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(imgray, 127, 255, cv2.THRESH_BINARY_INV) #binary inv! fijate que use esto eh
-    _, contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     #encuentra el contorno de mayor area
     areas_cnt = [cv2.contourArea(x) for x in contours]
     #itemgetter(1) quiere decir que toma en cuenta el segundo elento de la tupla que devuelve el enumerate
-    enumeradas = enumerate(areas_cnt)
-    max_idx, max_area = max(enumeradas, key=operator.itemgetter(1))
-    cnt=contours[max_idx]
+    ###enumeradas = enumerate(areas_cnt)
+    ###max_idx, max_area = max(enumeradas, key=operator.itemgetter(1))
+    ###cnt=contours[max_idx]
     #saca las propiedades del recangulo para ese contorno
-    x,y,w,h = cv2.boundingRect(cnt)
-    #dibuja el rectangulo en la imagen
-    ##cv2.rectangle(im, (x,y), (x+w,y+h), (0,255,0), 1)
-    ##cv2.imwrite("b.png", im)
-    mask = np.zeros((h,w), np.uint8) # crea una nueva matris llena de zeros
-    mask = thresh[y:y+h, x:x+w] # toma una region de la imagen thresh
+    flag = 0
+    for cnt in contours:
+        x,y,w,h = cv2.boundingRect(cnt)
+        #dibuja el rectangulo en la imagen
+        cv2.rectangle(im, (x,y), (x+w,y+h), (0,255,0), 1)
+        cv2.imwrite("result%s.png" % letter, im)
+        mask = np.zeros((h,w), np.uint8) # crea una nueva matris llena de zeros
+        mask = thresh[y:y+h, x:x+w] # toma una region de la imagen thresh
+        mask = cv2.resize(mask, (64, 64)) #demosle un tamano normalizado
 
-    onpix = cv2.countNonZero(mask) #a causa de esta funcion es que usamos thresh para invertir colores
-    xbar = x_bar(mask)
-    ybar = y_bar(mask)
-    x2bar = x2_bar(mask)
-    y2bar = y2_bar(mask)
-    x2ybr = x2_ybr(mask)
-    xy2br = x_y2br(mask)
-    xybar = xy_bar(mask)
-    xege = x_ege(mask)
-    xegvy = x_egvy(mask)
-    yege = y_ege(mask)
-    yegvy = y_egvy(mask)
-'''
+        if flag == 0:
+            print mask
+        flag = 1
+        onpix = cv2.countNonZero(mask) #a causa de esta funcion es que usamos thresh para invertir colores
+        xbar = x_bar(mask)
+        ybar = y_bar(mask)
+        x2bar = x2_bar(mask)
+        y2bar = y2_bar(mask)
+        x2ybr = x2_ybr(mask)
+        xy2br = x_y2br(mask)
+        xybar = xy_bar(mask)
+        xege = x_ege(mask)
+        xegvy = x_egvy(mask)
+        yege = y_ege(mask)
+        yegvy = y_egvy(mask)
+
+        results.append((letter, x, y, w, h, onpix, xbar, ybar, x2bar, y2bar, xybar, x2ybr, xy2br,xege, xegvy, yege, yegvy))
+    '''
     print "letter", letter
     print "x-box", x
     print "y-box", y
@@ -173,12 +184,18 @@ def image_process(im, letter):
     print "xegvy", xegvy
     print "y-ege", yege
     print "yegvy", yegvy
-'''
-    return [letter, x, y, w, h, onpix, xbar, ybar, x2bar, y2bar, xybar, x2ybr, xy2br,xege, xegvy, yege, yegvy]
+    '''
+    return results, mask
 
 
-filename = input("filename: ")
+from pprint import pprint
+
+filename = raw_input("filename: ")
+letra = raw_input("letra: ")
 #im = cv2.imread("test-image.png")
-im = cv2.imread(filename)
-results = image_process(im, "NONE")
-print results
+
+im = cv2.imread(filename + ".png")
+results, mask = image_process(im, letra)
+with open("file.csv", "a") as f:
+    for x in results:
+        f.write(",".join(str(s) for s in x) + "\n")
