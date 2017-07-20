@@ -139,7 +139,7 @@ def image_process(im, letter, case):
     #encuentra los contornos
     _, contours, _ = cv2.findContours(image_close, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    for cnt in contours:
+    for i, cnt in enumerate(contours):
 
         x,y,w,h = cv2.boundingRect(cnt)
         
@@ -153,8 +153,15 @@ def image_process(im, letter, case):
             
         mask = np.zeros((h,w), np.uint8) # crea una nueva matris llena de zeros
         mask = thresh[y:y+h, x:x+w] # toma una region de la imagen thresh
-        mask = cv2.resize(mask, (48,48)) #demosle un tamano normalizado
-
+        mask = cv2.resize(mask, (64,64)) #demosle un tamano normalizado
+        #se = np.ones((2,2), dtype='uint8')
+        #mask = cv2.erode(mask, se, iterations = 1)
+        
+        if case == LOWERCASE:
+            cv2.imwrite("resized/rez lower %d %s.png" % (i, letter), mask)
+        elif case == UPPERCASE:
+            cv2.imwrite("resized/rez UPPER %d %s.png" % (i, letter), mask)
+            
         onpix = cv2.countNonZero(mask) #a causa de esta funcion es que usamos thresh para invertir colores
         xbar = x_bar(mask)
         ybar = y_bar(mask)
@@ -197,4 +204,4 @@ if __name__ == "__main__":
                 f.write(",".join(str(s) for s in x) + "\n")
             completion += 1
             print "(%d/%d)" % (completion, abc_size*2)
-    
+
