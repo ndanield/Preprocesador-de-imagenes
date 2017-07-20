@@ -139,19 +139,16 @@ def image_process(im, letter):
     ###max_idx, max_area = max(enumeradas, key=operator.itemgetter(1))
     ###cnt=contours[max_idx]
     #saca las propiedades del recangulo para ese contorno
-    flag = 0
     for cnt in contours:
+        
         x,y,w,h = cv2.boundingRect(cnt)
         #dibuja el rectangulo en la imagen
         cv2.rectangle(im, (x,y), (x+w,y+h), (0,255,0), 1)
         cv2.imwrite("result%s.png" % letter, im)
         mask = np.zeros((h,w), np.uint8) # crea una nueva matris llena de zeros
         mask = thresh[y:y+h, x:x+w] # toma una region de la imagen thresh
-        mask = cv2.resize(mask, (64, 64)) #demosle un tamano normalizado
+        #mask = cv2.resize(mask, (64, 64)) #demosle un tamano normalizado
 
-        if flag == 0:
-            print mask
-        flag = 1
         onpix = cv2.countNonZero(mask) #a causa de esta funcion es que usamos thresh para invertir colores
         xbar = x_bar(mask)
         ybar = y_bar(mask)
@@ -165,7 +162,7 @@ def image_process(im, letter):
         yege = y_ege(mask)
         yegvy = y_egvy(mask)
 
-        results.append((letter, x, y, w, h, onpix, xbar, ybar, x2bar, y2bar, xybar, x2ybr, xy2br,xege, xegvy, yege, yegvy))
+        results.append((x, y, w, h, onpix, xbar, ybar, x2bar, y2bar, xybar, x2ybr, xy2br,xege, xegvy, yege, yegvy, letter))
     '''
     print "letter", letter
     print "x-box", x
@@ -191,11 +188,10 @@ def image_process(im, letter):
 from pprint import pprint
 
 filename = raw_input("filename: ")
-letra = raw_input("letra: ")
-#im = cv2.imread("test-image.png")
 
 im = cv2.imread(filename + ".png")
-results, mask = image_process(im, letra)
+results, mask = image_process(im, filename)
 with open("file.csv", "a") as f:
+    #f.write("x-box,y-box,ancho,alto,onpix,x-bar,y-bar,x2bar,y2bar,xybar,x2ybr,xy2br,x-ege,xegvy,y-ege,yegvx,letra\n")
     for x in results:
         f.write(",".join(str(s) for s in x) + "\n")
