@@ -126,25 +126,31 @@ def y_egvy(matrix):
     return suma
 
 
-def image_process(im, letter):
+def image_process(im, letter, case):
     results = []
-    
     imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(imgray, 127, 255, cv2.THRESH_BINARY_INV) #binary inv! fijate que use esto eh
-    _, contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    #encuentra el contorno de mayor area
-    areas_cnt = [cv2.contourArea(x) for x in contours]
-    #itemgetter(1) quiere decir que toma en cuenta el segundo elento de la tupla que devuelve el enumerate
-    ###enumeradas = enumerate(areas_cnt)
-    ###max_idx, max_area = max(enumeradas, key=operator.itemgetter(1))
-    ###cnt=contours[max_idx]
-    #saca las propiedades del recangulo para ese contorno
+   
+    #concectar espacios separados como por ejemplo en las i minusculas
+    se = np.ones((14,14), dtype='uint8')
+    #image_close = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, se)
+    image_close = cv2.dilate(thresh, se, iterations = 1)
+    
+    #encuentra los contornos
+    _, contours, _ = cv2.findContours(image_close, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
     for cnt in contours:
-        
+
         x,y,w,h = cv2.boundingRect(cnt)
+        
         #dibuja el rectangulo en la imagen
         cv2.rectangle(im, (x,y), (x+w,y+h), (0,255,0), 1)
-        cv2.imwrite("result%s.png" % letter, im)
+        
+        if case == LOWERCASE:
+            cv2.imwrite("boxes/Lower_%s.png" % letter, im)
+        elif case == UPPERCASE:
+            cv2.imwrite("boxes/Upper_%s.png" % letter, im)
+            
         mask = np.zeros((h,w), np.uint8) # crea una nueva matris llena de zeros
         mask = thresh[y:y+h, x:x+w] # toma una region de la imagen thresh
         #mask = cv2.resize(mask, (64, 64)) #demosle un tamano normalizado
@@ -163,35 +169,31 @@ def image_process(im, letter):
         yegvy = y_egvy(mask)
 
         results.append((x, y, w, h, onpix, xbar, ybar, x2bar, y2bar, xybar, x2ybr, xy2br,xege, xegvy, yege, yegvy, letter))
-    '''
-    print "letter", letter
-    print "x-box", x
-    print "y-box", y
-    print "width", w
-    print "high", h
-    print "onpix", onpix
-    print "x-bar", xbar
-    print "y-bar", ybar
-    print "x2bar", x2bar
-    print "y2bar", y2bar
-    print "xybar", xybar
-    print "x2ybr", x2ybr
-    print "xy2br", xy2br
-    print "x-ege", xege
-    print "xegvy", xegvy
-    print "y-ege", yege
-    print "yegvy", yegvy
-    '''
-    return results, mask
 
+    return results
 
-from pprint import pprint
-
-filename = raw_input("filename: ")
-
-im = cv2.imread(filename + ".png")
-results, mask = image_process(im, filename)
-with open("file.csv", "a") as f:
-    #f.write("x-box,y-box,ancho,alto,onpix,x-bar,y-bar,x2bar,y2bar,xybar,x2ybr,xy2br,x-ege,xegvy,y-ege,yegvx,letra\n")
-    for x in results:
-        f.write(",".join(str(s) for s in x) + "\n")
+if __name__ == "__main__":
+    #nochar = int(raw_input("cuantas letras? "))
+    abc_size = 26
+    completion = 0
+    LOWERCASE = 1
+    UPPERCASE = 0
+    with open("letras.csv", "w") as f:    
+        f.write("x-box,y-box,ancho,alto,onpix,x-bar,y-bar,x2bar,y2bar,xybar,x2ybr,xy2br,x-ege,xegvy,y-ege,yegvx,letra\n")        
+        for i in range(abc_size):
+            filename = chr(ord('A') + i)
+            im = cv2.imread("samples/capital/" + filename + ".png")
+            results = image_process(im, filename, UPPERCASE)    
+            for x in results:
+                f.write(",".join(str(s) for s in x) + "\n")
+            completion += 1
+            print "(%d/%d)" % (completion, abc_size*2)
+        for i in range(abc_size):
+            filename = chr(ord('a') + i) 
+            im = cv2.imread("samples/lower/" + filename + ".png")
+            results = image_process(im, filename, LOWERCASE)    
+            for x in results:
+                f.write(",".join(str(s) for s in x) + "\n")
+            completion += 1
+            print "(%d/%d)" % (completion, abc_size*2)
+    
