@@ -124,63 +124,61 @@ def y_egvy(matrix):
                     suma += i
     return suma
 
-im = cv2.imread("test-image.png")
-imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-ret, thresh = cv2.threshold(imgray, 127, 255, cv2.THRESH_BINARY_INV)
 
-#cv2.drawContours(mask,contours,0,255,-1)
-#pixelpoints = np.transpose(np.nonzero(mask))
+def image_process(im, letter):
+    imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(imgray, 127, 255, cv2.THRESH_BINARY_INV) #binary inv! fijate que use esto eh
+    _, contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    #encuentra el contorno de mayor area
+    areas_cnt = [cv2.contourArea(x) for x in contours]
+    #itemgetter(1) quiere decir que toma en cuenta el segundo elento de la tupla que devuelve el enumerate
+    enumeradas = enumerate(areas_cnt)
+    max_idx, max_area = max(enumeradas, key=operator.itemgetter(1))
+    cnt=contours[max_idx]
+    #saca las propiedades del recangulo para ese contorno
+    x,y,w,h = cv2.boundingRect(cnt)
+    #dibuja el rectangulo en la imagen
+    ##cv2.rectangle(im, (x,y), (x+w,y+h), (0,255,0), 1)
+    ##cv2.imwrite("b.png", im)
+    mask = np.zeros((h,w), np.uint8) # crea una nueva matris llena de zeros
+    mask = thresh[y:y+h, x:x+w] # toma una region de la imagen thresh
 
-im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-#encuentra el contorno de mayor area
-areas_cnt = [cv2.contourArea(x) for x in contours]
-#print "areas", areas_cnt
+    onpix = cv2.countNonZero(mask) #a causa de esta funcion es que usamos thresh para invertir colores
+    xbar = x_bar(mask)
+    ybar = y_bar(mask)
+    x2bar = x2_bar(mask)
+    y2bar = y2_bar(mask)
+    x2ybr = x2_ybr(mask)
+    xy2br = x_y2br(mask)
+    xybar = xy_bar(mask)
+    xege = x_ege(mask)
+    xegvy = x_egvy(mask)
+    yege = y_ege(mask)
+    yegvy = y_egvy(mask)
+'''
+    print "letter", letter
+    print "x-box", x
+    print "y-box", y
+    print "width", w
+    print "high", h
+    print "onpix", onpix
+    print "x-bar", xbar
+    print "y-bar", ybar
+    print "x2bar", x2bar
+    print "y2bar", y2bar
+    print "xybar", xybar
+    print "x2ybr", x2ybr
+    print "xy2br", xy2br
+    print "x-ege", xege
+    print "xegvy", xegvy
+    print "y-ege", yege
+    print "yegvy", yegvy
+'''
+    return [letter, x, y, w, h, onpix, xbar, ybar, x2bar, y2bar, xybar, x2ybr, xy2br,xege, xegvy, yege, yegvy]
 
-#itemgetter(1) quiere decir que toma en cuenta el segundo elento de la tupla que devuelve el enumerate
-##print "enumerando..."
-enumeradas = enumerate(areas_cnt)
-max_idx, max_area = max(enumeradas, key=operator.itemgetter(1))
-#print "mayor index", max_idx
-cnt=contours[max_idx]
 
-x,y,w,h = cv2.boundingRect(cnt)
-cv2.rectangle(im, (x,y), (x+w,y+h), (0,255,0), 1)
-mask = np.zeros((h,w), np.uint8)
-mask = thresh[y:y+h, x:x+w]
-
-print mask
-onpix = cv2.countNonZero(mask)
-xbar = x_bar(mask)
-ybar = y_bar(mask)
-x2bar = x2_bar(mask)
-y2bar = y2_bar(mask)
-x2ybr = x2_ybr(mask)
-xy2br = x_y2br(mask)
-xybar = xy_bar(mask)
-xege = x_ege(mask)
-xegvy = x_egvy(mask)
-yege = y_ege(mask)
-yegvy = y_egvy(mask)
-
-
-#el rectangulo se dibuja en im pero se calcula el contorno en thresh
-cv2.drawContours(im,contours,-1,255,-1)
-cv2.imwrite("b.png", im)
-
-print "letter SOMETHING"
-print "x-box", x
-print "y-box", y
-print "width", w
-print "high", h
-print "onpix", onpix
-print "x-bar", xbar
-print "y-bar", ybar
-print "x2bar", x2bar
-print "y2bar", y2bar
-print "xybar", xybar
-print "x2ybr", x2ybr
-print "xy2br", xy2br
-print "x-ege", xege
-print "xegvy", xegvy
-print "y-ege", yege
-print "yegvy", yegvy
+filename = input("filename: ")
+#im = cv2.imread("test-image.png")
+im = cv2.imread(filename)
+results = image_process(im, "NONE")
+print results
